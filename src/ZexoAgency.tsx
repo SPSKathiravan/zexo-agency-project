@@ -399,7 +399,7 @@ export default function ZexoAgency() {
         >
           <Reveal delay={80}>
             <div className="zx-eyebrow" style={{ marginBottom: 18 }}>
-              Digital &amp; Brand Agency Dammam  |  Al Khobar, Saudi Arabia
+              Digital &amp; Brand Agency Dammam     Al Khobar, Saudi Arabia
             </div>
           </Reveal>
 
