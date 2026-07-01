@@ -1,7 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import RotatingText from "./RotatingText";
 import LightRays from "./LightRays.tsx";
-import ImageTrail from "./ImageTrail.tsx";
 import FallingText from "./FallingText"; // Ensure this file exists in your directory
 
 interface ProjectItem {
@@ -124,40 +123,10 @@ const styles = `
   .image-trail-section .section-header {
     margin-bottom: 24px;
   }
-  .image-trail-wrapper {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
-    overflow: hidden;
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    background: #0d0d0d;
-  }
-  .image-trail-hint {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 200;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 500;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0.7;
-    transition: opacity 0.5s;
-    font-family: var(--font-body);
-  }
-  .image-trail-hint svg {
-    width: 16px;
-    height: 16px;
-    stroke: var(--muted);
-  }
 
-  /* ───── Mobile logo grid (replaces cursor-trail on touch devices) ───── */
+  /* ───── Logo grid (desktop + mobile) — a lightweight, dependency-free,
+     GPU-accelerated tile grid. Only transform/opacity are animated so it
+     stays smooth even on lower-end devices. ───── */
   .logo-grid-wrapper {
     width: 100%;
     max-width: 1200px;
@@ -168,8 +137,8 @@ const styles = `
   }
   .logo-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
     align-items: center;
   }
   .logo-grid-item {
@@ -182,16 +151,20 @@ const styles = `
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 14px;
+    padding: 18px;
+    will-change: transform;
+    transform: translateZ(0);
+    transition: transform .3s cubic-bezier(.22,.61,.36,1), box-shadow .3s ease, border-color .3s ease;
   }
   .logo-grid-item img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
+    pointer-events: none;
   }
 
-  /* ───── Mobile: infinite auto-scrolling logo marquee (replaces static grid) ───── */
+  /* ───── Mobile: infinite auto-scrolling logo marquee ───── */
   .logo-marquee-wrapper {
     width: 100%;
     overflow: hidden;
@@ -202,6 +175,7 @@ const styles = `
     display: flex;
     gap: 14px;
     width: max-content;
+    will-change: transform;
     animation: logo-marquee-scroll 24s linear infinite;
   }
   .logo-marquee-item {
@@ -499,6 +473,7 @@ const styles = `
     .project-card:not(.active):hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
     .project-card:not(.active):hover .project-card-img { transform: scale(1.06); }
     .upcoming-card:hover img { transform: scale(1.1); filter: brightness(.65); }
+    .logo-grid-item:hover { transform: translateY(-6px) scale(1.04); box-shadow: 0 16px 34px rgba(0,0,0,0.45); border-color: rgba(12,134,101,0.4); }
     .footer-instagram:hover {
       transform: translateY(-4px) scale(1.08) rotate(-6deg);
       background: var(--accent);
@@ -520,7 +495,6 @@ const styles = `
     .navbar.scrolled { padding: 12px 24px; }
     .hero-title { font-size: 44px; letter-spacing: -1px; }
     .portfolio-title { font-size: 32px; }
-    .image-trail-wrapper { height: 360px; }
     .footer { padding: 48px 32px 28px; }
     .upcoming-projects { padding: 0 32px 90px; }
     .upcoming-grid { columns: 2 240px; }
@@ -862,11 +836,18 @@ export default function ZexoAgency(): ReactNode {
               </div>
             </div>
           ) : (
-            <div className="image-trail-wrapper">
-              <ImageTrail
-                items={imageTrailItems}
-                variant={2}
-              />
+            <div className="logo-grid-wrapper">
+              <div className="logo-grid">
+                {imageTrailItems.map((src, i) => (
+                  <div className="logo-grid-item" key={i}>
+                    <img
+                      src={src}
+                      alt={`Logo design ${i + 1}`}
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -884,15 +865,6 @@ export default function ZexoAgency(): ReactNode {
               mouseConstraintStiffness={0.9}
             />
           </div>
-
-          {!isMobile && (
-            <div className="image-trail-hint">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59" />
-              </svg>
-              Move your cursor to explore
-            </div>
-          )}
         </div>
       </section>
 
