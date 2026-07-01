@@ -582,7 +582,6 @@ const socialMediaData: SocialProjectItem[] = [
   { title: "Kaka Grill Jubail", tag: "Social Media", badge: "SOCIAL", bg: "#1a1212", type: "social", images: ["/kaka-1.jpg", "/kaka-2.jpg", "/kaka-3.jpg", "/kaka-4.jpg", "/kaka-5.jpg", "/kaka-6.jpg", "/kaka-7.jpg", "/kaka-8.jpg"] },
   { title: "Zelebrate Moments", tag: "Social Media", badge: "SOCIAL", bg: "#121a12", type: "social", images: ["/zelebrate-1.jpg", "/zelebrate-2.jpg", "/zelebrate-3.jpg", "/zelebrate-4.jpg", "/zelebrate-5.jpg", "/zelebrate-6.jpg", "/zelebrate-7.jpg", "/zelebrate-8.jpg", "/zelebrate-9.jpg", "/zelebrate-10.jpg"] },
   { title: "Triton Arabia", tag: "Social Media", badge: "SOCIAL", bg: "#12121a", type: "social", images: ["/triton-1.jpg", "/triton-2.jpg", "/triton-3.jpg", "/triton-4.jpg", "/triton-5.jpg", "/triton-6.jpg", "/triton-7.jpg", "/triton-8.jpg", "/triton-9.jpg"] },
-  { title: "Spice Manthra", tag: "Social Media", badge: "SOCIAL", bg: "#1a1a12", type: "social", images: ["/spice-1.jpg", "/spice-2.jpg", "/spice-3.jpg"] },
   { title: "Biriyani Point", tag: "Social Media", badge: "SOCIAL", bg: "#1a121a", type: "social", images: ["/biriyani-1.jpg", "/biriyani-2.jpg", "/biriyani-3.jpg", "/biriyani-4.jpg", "/biriyani-5.jpg", "/biriyani-6.jpg", "/biriyani-9.jpg"] },
   { title: "Beauty Salon Oman", tag: "Social Media", badge: "SOCIAL", bg: "#121a1a", type: "social", images: ["/salon-1.jpg", "/salon-2.jpg", "/salon-3.jpg", "/salon-4.jpg", "/salon-5.jpg", "/salon-6.jpg", "/salon-7.jpg", "/salon-8.jpg", "/salon-9.jpg"] },
   { title: "Look Smart", tag: "Social Media", badge: "SOCIAL", bg: "#14181c", type: "social", images: ["/looksmart-1.jpg", "/looksmart-2.jpg", "/looksmart-3.jpg", "/looksmart-4.jpg", "/looksmart-5.jpg", "/looksmart-6.jpg"] },
@@ -866,7 +865,6 @@ export default function ZexoAgency(): ReactNode {
               <img src={project.image} alt={project.title} />
               <div className="upcoming-card-badge">{project.tag}</div>
               <div className="upcoming-card-overlay">
-                <div className="upcoming-card-title">{project.title}</div>
                 <div className="upcoming-card-tag">{project.tag}</div>
               </div>
             </div>
