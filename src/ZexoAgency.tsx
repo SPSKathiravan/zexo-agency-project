@@ -1,7 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import RotatingText from "./RotatingText";
 import LightRays from "./LightRays.tsx";
-import Stack from "./Stack.tsx";
 import ImageTrail from "./ImageTrail.tsx";
 import FallingText from "./FallingText"; // Ensure this file exists in your directory
 
@@ -59,12 +58,16 @@ const styles = `
   .portfolio-title { font-family: var(--font-display); font-size: 42px; font-weight: 900; margin-bottom: 44px; }
   .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1200px; margin: 0 auto; }
 
+  /* ───── Universal "image frame" card — used for Website Projects,
+     Social Media Projects, and Logo Designs, so every section shares
+     the exact same photo-frame look (image + bottom gradient + title/tag). ───── */
   .project-card { border-radius: 14px; overflow: hidden; position: relative; cursor: pointer; aspect-ratio: 16 / 10; background: #111; transition: transform .3s ease, box-shadow .3s ease, aspect-ratio .4s ease; }
   .project-card-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
-  .project-card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%); }
-  .project-card-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #fff; }
-  .project-card-tag { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+  .project-card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 20px 18px; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 55%, transparent 100%); }
+  .project-card-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
+  .project-card-tag { font-size: 11.5px; color: #3ee6b4; font-weight: 700; margin-top: 4px; text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
   .project-card-badge { position: absolute; top: 16px; right: 16px; background: rgba(12,134,101,0.15); border: 1px solid rgba(12,134,101,0.35); color: var(--accent); font-size: 9px; padding: 4px 8px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px; }
+  .project-card-count { position: absolute; top: 16px; left: 16px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 10px; padding: 4px 9px; border-radius: 20px; font-weight: 700; letter-spacing: 0.3px; backdrop-filter: blur(4px); }
 
   /* ───── Tap-to-expand: shows the FULL image (no cropping) ───── */
   .project-card.active {
@@ -104,13 +107,6 @@ const styles = `
     z-index: 3;
     cursor: pointer;
   }
-
-  .social-card { border-radius: 14px; overflow: hidden; cursor: pointer; transition: transform .3s ease, box-shadow .3s ease; }
-  .social-card-thumb { height: auto; display: flex; align-items: center; justify-content: center; position: relative; padding: 8px; }
-  .social-card-stack-wrap { width: 100%; max-width: 220px; aspect-ratio: 1 / 1; height: auto; }
-  .social-card-body { padding: 16px 18px 18px; background: #111; }
-  .social-card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin: 0 0 6px; color: #fff; }
-  .social-card-desc { font-size: 13px; color: var(--accent); margin: 0 0 16px; line-height: 1.5; }
 
   .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 44px; flex-wrap: wrap; gap: 12px; }
   .section-title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
@@ -178,20 +174,57 @@ const styles = `
   }
   .logo-grid-item {
     aspect-ratio: 1 / 1;
-    border-radius: 14px;
+    border-radius: 16px;
     overflow: hidden;
-    background: transparent;
-    border: none;
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 14px;
   }
   .logo-grid-item img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
+  }
+
+  /* ───── Mobile: infinite auto-scrolling logo marquee (replaces static grid) ───── */
+  .logo-marquee-wrapper {
+    width: 100%;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  }
+  .logo-marquee-track {
+    display: flex;
+    gap: 14px;
+    width: max-content;
+    animation: logo-marquee-scroll 24s linear infinite;
+  }
+  .logo-marquee-item {
+    flex: 0 0 150px;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-marquee-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  @keyframes logo-marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
   }
 
   /* Custom Highlight for Falling Text */
@@ -364,7 +397,7 @@ const styles = `
     50% { opacity: 0.5; }
   }
 
-  /* ───── Company Brochure (NEW) ───── */
+  /* ───── Company Brochure ───── */
   .brochure-section {
     background: var(--bg);
     padding: 0 60px 120px;
@@ -464,7 +497,7 @@ const styles = `
     .btn-mail:hover { border-color: #0c8665; }
     .btn-call:hover { border-color: #0c8665; background: rgba(12,134,101,0.08); }
     .project-card:not(.active):hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
-    .social-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+    .project-card:not(.active):hover .project-card-img { transform: scale(1.06); }
     .upcoming-card:hover img { transform: scale(1.1); filter: brightness(.65); }
     .footer-instagram:hover {
       transform: translateY(-4px) scale(1.08) rotate(-6deg);
@@ -520,15 +553,14 @@ const styles = `
     .project-card { aspect-ratio: 16 / 11; }
 
     .section-header { margin-bottom: 22px; }
-    .social-card-thumb { padding: 6px; }
-    .social-card-stack-wrap { max-width: 100%; }
-    .social-card-body { padding: 14px 16px 16px; }
 
     .logo-section { padding: 20px 16px 56px; }
     .image-trail-section { padding: 0 16px 56px; }
     .logo-grid-wrapper { padding: 0; border-radius: 12px; }
     .logo-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
     .logo-grid-item { border-radius: 12px; }
+    .logo-marquee-item { flex-basis: 120px; border-radius: 12px; padding: 8px; }
+    .logo-marquee-track { gap: 10px; animation-duration: 18s; }
 
     .footer { padding: 36px 16px 22px; }
     .footer-inner { flex-direction: column; align-items: flex-start; gap: 18px; }
@@ -587,7 +619,7 @@ const socialMediaData: SocialProjectItem[] = [
   { title: "Look Smart", tag: "Social Media", badge: "SOCIAL", bg: "#14181c", type: "social", images: ["/looksmart-1.jpg", "/looksmart-2.jpg", "/looksmart-3.jpg", "/looksmart-4.jpg", "/looksmart-5.jpg", "/looksmart-6.jpg"] },
 ];
 
-/* ── 6th logo removed (was showing a broken image) ── */
+/* 6th logo removed (was showing a broken image) */
 const imageTrailItems = [
   "/triton-arabia-logo.jpg",
   "/nex-vision-arabia-logo.jpg",
@@ -611,7 +643,7 @@ const upcomingProjectsData: UpcomingProject[] = [
   { title: "Drift Coffee Co.", tag: "In Development", image: "/drift-coffee.jpg" },
 ];
 
-/* ═══════════════════════════ NEW: Company Brochure data ═══════════════════════════
+/* ═══════════════════════════ Company Brochure data ═══════════════════════════
    Drop your 4 PDF files into the `public/brochures/` folder of your project using
    these exact filenames (or edit the `file` paths below to match your own files).
    Clicking a card opens that PDF in a new browser tab. */
@@ -623,7 +655,6 @@ const brochuresData: BrochureItem[] = [
 ];
 
 // Small hook: tells us whether we're on a touch / narrow-screen device.
-// Used to swap the cursor-driven ImageTrail for a tap-friendly static grid on mobile.
 function useIsMobile(breakpoint = 768): boolean {
   const [isMobile, setIsMobile] = useState<boolean>(false);
 
@@ -639,7 +670,8 @@ function useIsMobile(breakpoint = 768): boolean {
 
 export default function ZexoAgency(): ReactNode {
   const [scrolled, setScrolled] = useState<boolean>(false);
-  const [activeProject, setActiveProject] = useState<number | null>(null); // tracks which website-project card is expanded to show the full image
+  const [activeProject, setActiveProject] = useState<number | null>(null); // Website Projects — full-image expand
+  const [activeSocial, setActiveSocial] = useState<number | null>(null); // Social Media Projects — full-image expand
   const isMobile = useIsMobile(768);
 
   useEffect(() => {
@@ -748,7 +780,9 @@ export default function ZexoAgency(): ReactNode {
         </div>
       </section>
 
-      {/* ───── Social Media Projects ───── */}
+      {/* ───── Social Media Projects — same photo-frame card as Website Projects,
+           with a "N photos" chip in place of the single-image assumption. Tapping
+           expands the cover image full-size, matching the Website Projects behavior. ───── */}
       <section className="portfolio">
         <div className="section-header">
           <div className="section-title-row">
@@ -761,28 +795,39 @@ export default function ZexoAgency(): ReactNode {
           </div>
         </div>
         <div className="portfolio-grid">
-          {socialMediaData.map((project, index) => (
-            <div className="social-card" key={`social-${index}`} style={{ background: project.bg }}>
-              <div className="social-card-thumb" style={{ background: project.bg }}>
-                <div className="social-card-stack-wrap">
-                  <Stack
-                    cards={project.images.map((src, i) => (
-                      <img
-                        key={i}
-                        src={src}
-                        alt={`${project.title}-${i + 1}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ))}
-                  />
+          {socialMediaData.map((project, index) => {
+            const isActive = activeSocial === index;
+            return (
+              <div
+                className={`project-card${isActive ? " active" : ""}`}
+                key={`social-${index}`}
+                style={{ background: project.bg }}
+                onClick={() => setActiveSocial(isActive ? null : index)}
+              >
+                {isActive && (
+                  <button
+                    className="project-card-close"
+                    aria-label="Close full image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveSocial(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+                <img src={project.images[0]} alt={project.title} className="project-card-img" loading="lazy" />
+                <div className="project-card-info">
+                  <div className="project-card-title">{project.title}</div>
+                  <div className="project-card-tag">{project.tag}</div>
                 </div>
+                <div className="project-card-badge">{project.badge}</div>
+                {!isActive && (
+                  <div className="project-card-count">{project.images.length} photos</div>
+                )}
               </div>
-              <div className="social-card-body">
-                <div className="social-card-title">{project.title}</div>
-                <div className="social-card-desc">Social Media Projects</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -800,13 +845,18 @@ export default function ZexoAgency(): ReactNode {
         </div>
         <div style={{ position: 'relative' }}>
           {isMobile ? (
-            /* Touch-friendly static grid — cursor-trail effects don't work on touch screens,
-               so mobile users get a clean, always-visible grid of every logo instead. */
-            <div className="logo-grid-wrapper">
-              <div className="logo-grid">
-                {imageTrailItems.map((src, i) => (
-                  <div className="logo-grid-item" key={i}>
-                    <img src={src} alt={`Logo design ${i + 1}`} loading="lazy" />
+            /* Touch devices: cursor-trail effects don't work here, so mobile users get
+               an infinite auto-scrolling marquee of logo cards instead — the list is
+               duplicated so the loop is seamless with no visible jump/reset. */
+            <div className="logo-marquee-wrapper">
+              <div className="logo-marquee-track">
+                {[...imageTrailItems, ...imageTrailItems].map((src, i) => (
+                  <div className="logo-marquee-item" key={i}>
+                    <img
+                      src={src}
+                      alt={`Logo design ${(i % imageTrailItems.length) + 1}`}
+                      loading="lazy"
+                    />
                   </div>
                 ))}
               </div>
@@ -872,7 +922,7 @@ export default function ZexoAgency(): ReactNode {
         </div>
       </section>
 
-      {/* ───── Company Brochure (NEW — placed right after Upcoming Projects) ───── */}
+      {/* ───── Company Brochure ───── */}
       <section className="brochure-section">
         <div className="section-header">
           <div className="section-title-row">
