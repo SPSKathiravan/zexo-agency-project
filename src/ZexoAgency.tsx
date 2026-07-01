@@ -168,18 +168,21 @@ const styles = `
   .logo-marquee-wrapper {
     width: 100%;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
-    mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
   }
   .logo-marquee-track {
     display: flex;
     gap: 14px;
     width: max-content;
     will-change: transform;
-    animation: logo-marquee-scroll 24s linear infinite;
+    backface-visibility: hidden;
+    animation: logo-marquee-scroll 42s linear infinite;
   }
   .logo-marquee-item {
     flex: 0 0 150px;
+    width: 150px;
+    flex-shrink: 0;
     aspect-ratio: 3 / 4;
     border-radius: 16px;
     overflow: hidden;
@@ -197,8 +200,8 @@ const styles = `
     display: block;
   }
   @keyframes logo-marquee-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
   }
 
   /* Custom Highlight for Falling Text */
@@ -533,8 +536,8 @@ const styles = `
     .logo-grid-wrapper { padding: 0; border-radius: 12px; }
     .logo-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
     .logo-grid-item { border-radius: 12px; }
-    .logo-marquee-item { flex-basis: 120px; border-radius: 12px; padding: 8px; }
-    .logo-marquee-track { gap: 10px; animation-duration: 18s; }
+    .logo-marquee-item { flex-basis: 120px; width: 120px; border-radius: 12px; padding: 8px; }
+    .logo-marquee-track { gap: 10px; animation-duration: 36s; }
 
     .footer { padding: 36px 16px 22px; }
     .footer-inner { flex-direction: column; align-items: flex-start; gap: 18px; }
