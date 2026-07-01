@@ -1,43 +1,23 @@
-.stack-container {
-  position: relative;
+/* Only visual overrides live here — all structural/layout CSS (grid,
+   sizing, positioning) is inlined directly in Stack.tsx so the gallery
+   can never break due to a missing or stale stylesheet. */
+
+/* Force no-crop: overrides the inline object-fit: cover set by the caller
+   on the <img> elements passed in as `cards`. */
+.stack-preview img,
+.stack-preview .card-image {
   width: 100%;
   height: 100%;
-  perspective: 600px;
-}
-
-.card-rotate {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  cursor: grab;
-}
-
-.card-rotate-disabled {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  cursor: pointer;
-}
-
-.card {
-  border-radius: 1rem;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card img {
+  object-fit: contain !important;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+  touch-action: none;
 }
 
-.card-image {
+.stack-modal-item img,
+.stack-modal-item .card-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  pointer-events: none;
+  object-fit: contain !important;
 }

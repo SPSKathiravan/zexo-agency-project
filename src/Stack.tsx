@@ -1,204 +1,199 @@
-import { motion, useMotionValue, useTransform, type PanInfo } from 'motion/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import './Stack.css';
 
-interface CardRotateProps {
-  children: React.ReactNode;
-  onSendToBack: () => void;
-  sensitivity: number;
-  disableDrag?: boolean;
-}
-
-function CardRotate({ children, onSendToBack, sensitivity, disableDrag = false }: CardRotateProps) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-100, 100], [60, -60]);
-  const rotateY = useTransform(x, [-100, 100], [-60, 60]);
-
-  function handleDragEnd(_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
-    if (Math.abs(info.offset.x) > sensitivity || Math.abs(info.offset.y) > sensitivity) {
-      onSendToBack();
-    } else {
-      x.set(0);
-      y.set(0);
-    }
-  }
-
-  if (disableDrag) {
-    return (
-      <motion.div className="card-rotate-disabled" style={{ x: 0, y: 0 }}>
-        {children}
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      className="card-rotate"
-      style={{ x, y, rotateX, rotateY }}
-      drag
-      dragConstraints={{ top: 0, right: 0, bottom: 0, left: 0 }}
-      dragElastic={0.6}
-      whileTap={{ cursor: 'grabbing' }}
-      onDragEnd={handleDragEnd}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 interface StackProps {
-  randomRotation?: boolean;
-  sensitivity?: number;
-  sendToBackOnClick?: boolean;
   cards?: React.ReactNode[];
-  animationConfig?: { stiffness: number; damping: number };
-  autoplay?: boolean;
-  autoplayDelay?: number;
-  pauseOnHover?: boolean;
-  mobileClickOnly?: boolean;
-  mobileBreakpoint?: number;
+  // Legacy props from the old animated version are accepted (and ignored)
+  // so existing call sites don't need to change.
+  [key: string]: unknown;
 }
 
-export default function Stack({
-  randomRotation = false,
-  sensitivity = 200,
-  cards = [],
-  animationConfig = { stiffness: 260, damping: 20 },
-  sendToBackOnClick = false,
-  autoplay = false,
-  autoplayDelay = 3000,
-  pauseOnHover = false,
-  mobileClickOnly = false,
-  mobileBreakpoint = 768
-}: StackProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+// Critical layout is inlined (not left to an external stylesheet) so the
+// grid/gallery always renders correctly even if Stack.css fails to load
+// or a stale/cached copy is served — this was causing the mobile gallery
+// to fall back to a plain single-column list of full-size images.
 
+const containerStyle: CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  height: '100%',
+  borderRadius: '1rem',
+  overflow: 'hidden',
+  background: '#0a0a0a',
+  touchAction: 'manipulation',
+};
+
+const previewWrapStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const seeAllBtnStyle: CSSProperties = {
+  position: 'absolute',
+  bottom: '10px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '5px',
+  background: 'rgba(12, 134, 101, 0.95)',
+  color: '#fff',
+  border: 'none',
+  fontSize: '12px',
+  fontWeight: 700,
+  padding: '8px 16px',
+  borderRadius: '999px',
+  cursor: 'pointer',
+  touchAction: 'manipulation',
+  WebkitTapHighlightColor: 'transparent',
+  userSelect: 'none',
+  whiteSpace: 'nowrap',
+};
+
+const backdropStyle: CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  background: '#050505',
+  zIndex: 1000,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '16px',
+  touchAction: 'manipulation',
+  overscrollBehavior: 'contain',
+};
+
+const modalStyle: CSSProperties = {
+  position: 'relative',
+  width: '100%',
+  maxWidth: '1000px',
+  maxHeight: '92vh',
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+  background: '#111111',
+  borderRadius: '14px',
+  padding: '12px',
+  WebkitOverflowScrolling: 'touch',
+};
+
+const closeBtnStyle: CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  float: 'right',
+  width: '36px',
+  height: '36px',
+  borderRadius: '50%',
+  background: 'rgba(0, 0, 0, 0.6)',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  color: '#fff',
+  fontSize: '16px',
+  cursor: 'pointer',
+  zIndex: 2,
+  marginBottom: '8px',
+  touchAction: 'manipulation',
+  WebkitTapHighlightColor: 'transparent',
+};
+
+// Grid auto-fits its columns to whatever width is available — this alone
+// adapts from phones to desktop without needing separate breakpoints.
+const gridStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))',
+  gap: '6px',
+  clear: 'both',
+};
+
+const gridItemStyle: CSSProperties = {
+  aspectRatio: '1 / 1',
+  borderRadius: '8px',
+  overflow: 'hidden',
+  background: '#0a0a0a',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+export default function Stack({ cards = [] }: StackProps) {
+  const [open, setOpen] = useState(false);
+
+  // Lock the background page while the gallery is open. Without this,
+  // the page behind can still scroll, which makes the navbar's blur
+  // effect flicker on/off, and causes janky/laggy touch behavior.
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < mobileBreakpoint);
+    if (!open) return;
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+    const prevPosition = body.style.position;
+    const prevTop = body.style.top;
+    const prevWidth = body.style.width;
+
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
+    return () => {
+      body.style.overflow = prevOverflow;
+      body.style.position = prevPosition;
+      body.style.top = prevTop;
+      body.style.width = prevWidth;
+      window.scrollTo(0, scrollY);
     };
+  }, [open]);
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, [mobileBreakpoint]);
+  if (!cards.length) return null;
 
-  const shouldDisableDrag = mobileClickOnly && isMobile;
-  const shouldEnableClick = sendToBackOnClick || shouldDisableDrag;
-
-  const [stack, setStack] = useState<{ id: number; content: React.ReactNode }[]>(() => {
-    if (cards.length) {
-      return cards.map((content, index) => ({ id: index + 1, content }));
-    } else {
-      return [
-        {
-          id: 1,
-          content: (
-            <img
-              src="https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?q=80&w=500&auto=format"
-              alt="card-1"
-              className="card-image"
-            />
-          )
-        },
-        {
-          id: 2,
-          content: (
-            <img
-              src="https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=500&auto=format"
-              alt="card-2"
-              className="card-image"
-            />
-          )
-        },
-        {
-          id: 3,
-          content: (
-            <img
-              src="https://images.unsplash.com/photo-1452626212852-811d58933cae?q=80&w=500&auto=format"
-              alt="card-3"
-              className="card-image"
-            />
-          )
-        },
-        {
-          id: 4,
-          content: (
-            <img
-              src="https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=500&auto=format"
-              alt="card-4"
-              className="card-image"
-            />
-          )
-        }
-      ];
-    }
-  });
-
-  useEffect(() => {
-    if (cards.length) {
-      setStack(cards.map((content, index) => ({ id: index + 1, content })));
-    }
-  }, [cards]);
-
-  const sendToBack = (id: number) => {
-    setStack(prev => {
-      const newStack = [...prev];
-      const index = newStack.findIndex(card => card.id === id);
-      const [card] = newStack.splice(index, 1);
-      newStack.unshift(card);
-      return newStack;
-    });
-  };
-
-  useEffect(() => {
-    if (autoplay && stack.length > 1 && !isPaused) {
-      const interval = setInterval(() => {
-        const topCardId = stack[stack.length - 1].id;
-        sendToBack(topCardId);
-      }, autoplayDelay);
-
-      return () => clearInterval(interval);
-    }
-  }, [autoplay, autoplayDelay, stack, isPaused]);
+  const previewCard = cards[0];
 
   return (
-    <div
-      className="stack-container"
-      onMouseEnter={() => pauseOnHover && setIsPaused(true)}
-      onMouseLeave={() => pauseOnHover && setIsPaused(false)}
-    >
-      {stack.map((card, index) => {
-        const randomRotate = randomRotation ? Math.random() * 10 - 5 : 0;
-        return (
-          <CardRotate
-            key={card.id}
-            onSendToBack={() => sendToBack(card.id)}
-            sensitivity={sensitivity}
-            disableDrag={shouldDisableDrag}
-          >
-            <motion.div
-              className="card"
-              onClick={() => shouldEnableClick && sendToBack(card.id)}
-              animate={{
-                rotateZ: (stack.length - index - 1) * 4 + randomRotate,
-                scale: 1 + index * 0.06 - stack.length * 0.06,
-                transformOrigin: '90% 90%'
-              }}
-              initial={false}
-              transition={{
-                type: 'spring',
-                stiffness: animationConfig.stiffness,
-                damping: animationConfig.damping
-              }}
+    <>
+      <div className="stack-container" style={containerStyle}>
+        <div className="stack-preview" style={previewWrapStyle}>
+          {previewCard}
+        </div>
+        <button
+          type="button"
+          className="stack-see-all-btn"
+          style={seeAllBtnStyle}
+          onClick={() => setOpen(true)}
+        >
+          See All <span style={{ opacity: 0.85, fontWeight: 600 }}>({cards.length})</span>
+        </button>
+      </div>
+
+      {open && (
+        <div
+          className="stack-modal-backdrop"
+          style={backdropStyle}
+          onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="stack-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="stack-modal-close"
+              style={closeBtnStyle}
+              onClick={() => setOpen(false)}
+              aria-label="Close gallery"
             >
-              {card.content}
-            </motion.div>
-          </CardRotate>
-        );
-      })}
-    </div>
+              ✕
+            </button>
+            <div className="stack-modal-grid" style={gridStyle}>
+              {cards.map((card, i) => (
+                <div className="stack-modal-item" style={gridItemStyle} key={i}>
+                  {card}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

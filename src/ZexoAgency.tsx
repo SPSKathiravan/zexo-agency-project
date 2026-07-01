@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import RotatingText from "./RotatingText";
-import Antigravity from "./Antigravity";
+import LightRays from "./LightRays.tsx";
 import Stack from "./Stack.tsx";
 import ImageTrail from "./ImageTrail.tsx";
 import FallingText from "./FallingText"; // Ensure this file exists in your directory
@@ -10,61 +10,110 @@ interface ProjectItem {
   tag: string;
   badge: string;
   bg: string;
+  image?: string;
   type: "glass" | "workflow" | "social" | "twitch";
 }
 
-interface SocialProjectItem extends ProjectItem {
+interface SocialProjectItem {
+  title: string;
+  tag: string;
+  badge: string;
+  bg: string;
+  type: "social";
   images: string[];
+}
+
+/* NEW: one entry per PDF brochure card */
+interface BrochureItem {
+  title: string;
+  file: string; // path to the PDF, e.g. /brochures/triton-arabia-materia.pdf
 }
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
   :root { --bg: #0a0a0a; --bg-card: #111111; --accent: #0c8665; --accent-dim: #0a6e53; --text: #ffffff; --muted: #9ca3af; --border: #1e1e1e; --font-display: 'Poppins', sans-serif; --font-body: 'Inter', sans-serif; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-body); }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); overflow-x: hidden; }
 
   .navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 22px 60px; background: transparent; transition: background .3s, backdrop-filter .3s, padding .3s; }
   .navbar.scrolled { background: rgba(10,10,10,0.72); backdrop-filter: blur(18px); padding: 16px 60px; }
-  .nav-logo { display: flex; align-items: center; text-decoration: none; font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--text); }
+  .nav-logo { display: flex; align-items: center; text-decoration: none; font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--text); min-width: 0; }
   .nav-logo-static { color: var(--text); }
-  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s; }
-  .btn-primary:hover { background: var(--accent-dim); }
+  .nav-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px 24px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .2s; white-space: nowrap; flex-shrink: 0; }
+  .btn-call { display: flex; align-items: center; justify-content: center; gap: 7px; background: transparent; color: #fff; border: 1.5px solid #333; border-radius: 8px; padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; transition: border-color .2s, background .2s; white-space: nowrap; min-height: 40px; }
+  .btn-call svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-  .hero { min-height: 100vh; padding: 120px 60px 80px; display: flex; align-items: center; position: relative; overflow: hidden; background: radial-gradient(ellipse 65% 70% at 78% 50%, rgba(12,134,101,0.07) 0%, transparent 60%), var(--bg); }
+  .hero { min-height: 100svh; padding: 120px 60px 80px; display: flex; align-items: center; position: relative; overflow: hidden; background: radial-gradient(ellipse 65% 70% at 78% 50%, rgba(12,134,101,0.07) 0%, transparent 60%), var(--bg); }
   .hero-content { max-width: 520px; position: relative; z-index: 5; }
   .hero-title { font-family: var(--font-display); font-size: 60px; font-weight: 900; line-height: 1.05; letter-spacing: -2px; margin-bottom: 22px; }
-  .hero-title .highlight { color: var(--accent); font-style: italic; border: 2.5px solid var(--accent); padding: 0 10px; border-radius: 6px; }
+  .hero-title .highlight { color: var(--accent); font-style: italic; border: 2.5px solid var(--accent); padding: 0 10px; border-radius: 6px; display: inline-block; }
   .hero-subtitle { color: var(--muted); font-size: 15px; line-height: 1.75; margin-bottom: 36px; max-width: 430px; }
 
   .hero-buttons { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
-  .btn-whatsapp { background: #0c8665; color: #fff; border: none; border-radius: 8px; padding: 12px 26px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: background .2s; }
-  .btn-whatsapp:hover { background: #0a6e53; }
-  .btn-mail { background: transparent; color: #fff; border: 1.5px solid #333; border-radius: 8px; padding: 12px 26px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: border-color .2s; }
-  .btn-mail:hover { border-color: #0c8665; }
+  .btn-whatsapp { background: #0c8665; color: #fff; border: none; border-radius: 8px; padding: 12px 26px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: background .2s; min-height: 48px; }
+  .btn-mail { background: transparent; color: #fff; border: 1.5px solid #333; border-radius: 8px; padding: 12px 26px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: border-color .2s; min-height: 48px; }
 
   .portfolio { background: var(--bg); padding: 80px 60px 100px; }
   .portfolio-title { font-family: var(--font-display); font-size: 42px; font-weight: 900; margin-bottom: 44px; }
   .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 1200px; margin: 0 auto; }
 
-  .project-card { border-radius: 14px; overflow: hidden; position: relative; cursor: pointer; aspect-ratio: 16 / 10; background: #111; transition: transform .3s ease, box-shadow .3s ease; }
-  .project-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+  .project-card { border-radius: 14px; overflow: hidden; position: relative; cursor: pointer; aspect-ratio: 16 / 10; background: #111; transition: transform .3s ease, box-shadow .3s ease, aspect-ratio .4s ease; }
+  .project-card-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
   .project-card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%); }
   .project-card-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: #fff; }
   .project-card-tag { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 4px; }
   .project-card-badge { position: absolute; top: 16px; right: 16px; background: rgba(12,134,101,0.15); border: 1px solid rgba(12,134,101,0.35); color: var(--accent); font-size: 9px; padding: 4px 8px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px; }
 
+  /* ───── Tap-to-expand: shows the FULL image (no cropping) ───── */
+  .project-card.active {
+    aspect-ratio: unset;
+    background: #000;
+    cursor: zoom-out;
+    grid-column: 1 / -1;
+    box-shadow: 0 16px 50px rgba(0,0,0,0.55);
+  }
+  .project-card.active .project-card-img {
+    position: relative;
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+  }
+  .project-card.active .project-card-info {
+    position: relative;
+    background: rgba(0,0,0,0.9);
+  }
+  .project-card-close {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    z-index: 3;
+    cursor: pointer;
+  }
+
   .social-card { border-radius: 14px; overflow: hidden; cursor: pointer; transition: transform .3s ease, box-shadow .3s ease; }
-  .social-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
-  .social-card-thumb { height: auto; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px; }
-  .social-card-stack-wrap { width: 130px; height: 130px; }
+  .social-card-thumb { height: auto; display: flex; align-items: center; justify-content: center; position: relative; padding: 8px; }
+  .social-card-stack-wrap { width: 100%; max-width: 220px; aspect-ratio: 1 / 1; height: auto; }
   .social-card-body { padding: 16px 18px 18px; background: #111; }
   .social-card-title { font-family: var(--font-display); font-size: 15px; font-weight: 700; margin: 0 0 6px; color: #fff; }
   .social-card-desc { font-size: 13px; color: var(--accent); margin: 0 0 16px; line-height: 1.5; }
-  .social-card-arrow { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #0c8665; background: #0c8665; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-left: auto; transition: background .2s, transform .2s; }
-  .social-card-arrow:hover { background: #0a6e53; transform: scale(1.1); }
 
-  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 44px; }
-  .section-title-row { display: flex; align-items: center; gap: 14px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 44px; flex-wrap: wrap; gap: 12px; }
+  .section-title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .dot-grid { display: grid; grid-template-columns: repeat(3, 8px); gap: 4px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #0c8665; }
 
@@ -83,7 +132,6 @@ const styles = `
     width: 100%;
     max-width: 1200px;
     margin: 0 auto;
-    height: 500px;
     position: relative;
     overflow: hidden;
     border-radius: 16px;
@@ -111,6 +159,39 @@ const styles = `
     width: 16px;
     height: 16px;
     stroke: var(--muted);
+  }
+
+  /* ───── Mobile logo grid (replaces cursor-trail on touch devices) ───── */
+  .logo-grid-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 12px;
+    background: transparent;
+    padding: 0;
+  }
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    align-items: center;
+  }
+  .logo-grid-item {
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+    overflow: hidden;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .logo-grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
   }
 
   /* Custom Highlight for Falling Text */
@@ -183,13 +264,6 @@ const styles = `
     transition: transform .35s ease, background .35s ease, border-color .35s ease, color .35s ease;
     animation: footer-pulse 2.6s ease-in-out infinite;
   }
-  .footer-instagram:hover {
-    transform: translateY(-4px) scale(1.08) rotate(-6deg);
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    animation-play-state: paused;
-  }
   .footer-instagram svg { width: 20px; height: 20px; }
   @keyframes footer-pulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(12,134,101,0.35); }
@@ -242,10 +316,6 @@ const styles = `
     object-fit: cover;
     transition: transform .6s cubic-bezier(.22,.61,.36,1), filter .6s ease;
   }
-  .upcoming-card:hover img {
-    transform: scale(1.1);
-    filter: brightness(.65);
-  }
   .upcoming-card-overlay {
     position: absolute;
     inset: 0;
@@ -260,8 +330,8 @@ const styles = `
     font-weight: 700;
     font-size: 16px;
     color: #fff;
-    transform: translateY(14px);
-    opacity: 0;
+    transform: translateY(0);
+    opacity: 1;
     transition: transform .4s ease, opacity .4s ease;
   }
   .upcoming-card-tag {
@@ -269,14 +339,9 @@ const styles = `
     color: var(--accent);
     font-weight: 600;
     margin-top: 4px;
-    transform: translateY(14px);
-    opacity: 0;
-    transition: transform .4s ease .05s, opacity .4s ease .05s;
-  }
-  .upcoming-card:hover .upcoming-card-title,
-  .upcoming-card:hover .upcoming-card-tag {
     transform: translateY(0);
     opacity: 1;
+    transition: transform .4s ease .05s, opacity .4s ease .05s;
   }
   .upcoming-card-badge {
     position: absolute;
@@ -299,31 +364,218 @@ const styles = `
     50% { opacity: 0.5; }
   }
 
+  /* ───── Company Brochure (NEW) ───── */
+  .brochure-section {
+    background: var(--bg);
+    padding: 0 60px 120px;
+  }
+  .brochure-subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 480px;
+    margin-top: -28px;
+    margin-bottom: 40px;
+  }
+  .brochure-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 26px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .brochure-card {
+    position: relative;
+    width: 100%;
+    max-width: 150px;
+    margin: 0 auto;
+    aspect-ratio: 1 / 0.86;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: 0;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  /* solid green folder shape — icon + PDF tag sit directly on it, no white card */
+  .brochure-folder {
+    position: absolute;
+    inset: 14px 0 0 0;
+    border-radius: 18px;
+    background: linear-gradient(160deg, var(--accent) 0%, #064e3b 100%);
+    box-shadow: 0 16px 30px -10px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .35s ease, box-shadow .35s ease;
+  }
+  .brochure-folder::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 14%;
+    width: 40%;
+    height: 22px;
+    border-radius: 10px 10px 0 0;
+    background: inherit;
+  }
+  .brochure-folder svg {
+    width: 38%;
+    height: 38%;
+    stroke: rgba(255,255,255,0.92);
+  }
+  .brochure-pdf-tag {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #fff;
+    background: #d92626;
+    padding: 3px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  }
+  .brochure-caption {
+    margin-top: 20px;
+    text-align: center;
+  }
+  .brochure-caption-title {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .brochure-card-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ───── Hover-only effects (real mouse/trackpad devices).
+     Keeps touch/tap on mobile from triggering hover states, which was
+     cropping/zooming images and obscuring photos on first touch. ───── */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover { background: var(--accent-dim); }
+    .btn-whatsapp:hover { background: #0a6e53; }
+    .btn-mail:hover { border-color: #0c8665; }
+    .btn-call:hover { border-color: #0c8665; background: rgba(12,134,101,0.08); }
+    .project-card:not(.active):hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+    .social-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+    .upcoming-card:hover img { transform: scale(1.1); filter: brightness(.65); }
+    .footer-instagram:hover {
+      transform: translateY(-4px) scale(1.08) rotate(-6deg);
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      animation-play-state: paused;
+    }
+    .brochure-card:hover .brochure-folder { transform: translateY(-6px); box-shadow: 0 24px 40px -10px rgba(0,0,0,0.6); }
+  }
+
+  /* ═══════════════════════════ TABLET ═══════════════════════════ */
   @media (max-width: 900px) {
-    .portfolio-grid { grid-template-columns: 1fr; }
-    .hero { padding: 120px 24px 80px; }
-    .portfolio { padding: 60px 24px 80px; }
-    .logo-section { padding: 40px 24px 80px; }
-    .image-trail-section { padding: 0 24px 80px; }
-    .navbar { padding: 18px 24px; }
-    .navbar.scrolled { padding: 14px 24px; }
-    .hero-title { font-size: 38px; letter-spacing: -1px; }
-    .portfolio-title { font-size: 30px; }
-    .image-trail-wrapper { height: 350px; }
-    .footer { padding: 48px 24px 28px; }
-    .footer-inner { flex-direction: column; align-items: flex-start; }
-    .upcoming-projects { padding: 0 24px 80px; }
+    .portfolio-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero { padding: 110px 32px 64px; }
+    .portfolio { padding: 60px 32px 80px; }
+    .logo-section { padding: 40px 32px 80px; }
+    .image-trail-section { padding: 0 32px 80px; }
+    .navbar { padding: 16px 24px; }
+    .navbar.scrolled { padding: 12px 24px; }
+    .hero-title { font-size: 44px; letter-spacing: -1px; }
+    .portfolio-title { font-size: 32px; }
+    .image-trail-wrapper { height: 360px; }
+    .footer { padding: 48px 32px 28px; }
+    .upcoming-projects { padding: 0 32px 90px; }
+    .upcoming-grid { columns: 2 240px; }
+    .logo-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+    .brochure-section { padding: 0 32px 90px; }
+    .brochure-grid { grid-template-columns: repeat(2, 1fr); gap: 22px; }
+  }
+
+  /* ═══════════════════════════ MOBILE ═══════════════════════════ */
+  @media (max-width: 640px) {
+    .navbar { padding: 14px 16px; }
+    .navbar.scrolled { padding: 12px 16px; }
+    .nav-logo { font-size: 16px; }
+    .nav-logo img { width: 20px; height: 20px; margin-right: 6px; }
+    .nav-actions { gap: 8px; }
+    .btn-primary { padding: 9px 14px; font-size: 12px; border-radius: 7px; min-height: 38px; }
+    .btn-call { padding: 9px 12px; font-size: 12px; border-radius: 7px; min-height: 38px; }
+    .btn-call-text { display: none; }
+
+    .hero { padding: 96px 20px 56px; min-height: auto; padding-bottom: 64px; }
+    .hero-content { max-width: 100%; }
+    .hero-title { font-size: 32px; letter-spacing: -0.5px; margin-bottom: 16px; }
+    .hero-subtitle { font-size: 14px; line-height: 1.65; margin-bottom: 28px; max-width: 100%; }
+    .hero-buttons { flex-direction: column; gap: 12px; }
+    .btn-whatsapp, .btn-mail { width: 100%; padding: 15px 20px; font-size: 14.5px; min-height: 52px; }
+
+    .portfolio { padding: 44px 16px 56px; }
+    .portfolio-title { font-size: 24px; margin-bottom: 24px; }
+    .portfolio-grid { grid-template-columns: 1fr; gap: 14px; }
+    .project-card { aspect-ratio: 16 / 11; }
+
+    .section-header { margin-bottom: 22px; }
+    .social-card-thumb { padding: 6px; }
+    .social-card-stack-wrap { max-width: 100%; }
+    .social-card-body { padding: 14px 16px 16px; }
+
+    .logo-section { padding: 20px 16px 56px; }
+    .image-trail-section { padding: 0 16px 56px; }
+    .logo-grid-wrapper { padding: 0; border-radius: 12px; }
+    .logo-grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+    .logo-grid-item { border-radius: 12px; }
+
+    .footer { padding: 36px 16px 22px; }
+    .footer-inner { flex-direction: column; align-items: flex-start; gap: 18px; }
+    .footer-brand { font-size: 17px; }
+    .footer-bottom { margin-top: 26px; font-size: 11px; }
+    .footer-instagram { width: 48px; height: 48px; }
+
+    .upcoming-projects { padding: 0 16px 56px; }
+    .upcoming-subtitle { margin-top: -14px; margin-bottom: 20px; font-size: 13px; }
+    .upcoming-grid { columns: 2 140px; column-gap: 10px; }
+    .upcoming-card { margin-bottom: 10px; border-radius: 12px; }
+    .upcoming-card-overlay { padding: 12px; }
+    .upcoming-card-title { font-size: 13px; }
+    .upcoming-card-tag { font-size: 10px; }
+    .upcoming-card-badge { top: 8px; right: 8px; font-size: 8px; padding: 4px 8px; }
+
+    .brochure-section { padding: 0 16px 56px; }
+    .brochure-subtitle { margin-top: -14px; margin-bottom: 22px; font-size: 13px; }
+    .brochure-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .brochure-card { max-width: 120px; }
+    .brochure-folder { inset: 12px 0 0 0; border-radius: 14px; }
+    .brochure-pdf-tag { font-size: 9px; padding: 2px 8px; bottom: -7px; }
+    .brochure-caption { margin-top: 16px; }
+    .brochure-caption-title { font-size: 12.5px; }
+  }
+
+  /* ═══════════════════════════ SMALL PHONES ═══════════════════════════ */
+  @media (max-width: 400px) {
+    .navbar { padding: 12px 14px; }
+    .nav-logo { font-size: 14.5px; }
+    .btn-primary, .btn-call { padding: 8px 10px; font-size: 11px; }
+    .hero-title { font-size: 27px; }
+    .hero { padding-top: 92px; }
+    .portfolio-title { font-size: 21px; }
+    .logo-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
     .upcoming-grid { columns: 1 280px; }
+    .brochure-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   }
 `;
 
 const projectsData: ProjectItem[] = [
-  { title: "Triton Arabia", tag: "Web Design", badge: "WEB", bg: "#0f1612", type: "glass" },
-  { title: "Nex Vision Arabia", tag: "Web Design", badge: "WEB", bg: "#0d1220", type: "workflow" },
-  { title: "Kaka Grill", tag: "Web Design", badge: "WEB", bg: "#18101a", type: "social" },
-  { title: "Spice Mantra", tag: "Web Design", badge: "WEB", bg: "#10101e", type: "twitch" },
-  { title: "Zelebrate Moments", tag: "Web Design", badge: "WEB", bg: "#121212", type: "glass" },
-  { title: "Max Gym", tag: "Web Design", badge: "WEB", bg: "#1a1010", type: "workflow" },
+  { title: "Triton Arabia", tag: "Web Design", badge: "WEB", bg: "#0f1612", image: "/triton-arabia-web.jpg", type: "glass" },
+  { title: "Nex Vision Arabia", tag: "Web Design", badge: "WEB", bg: "#0d1220", image: "/nex-vision-arabia-web.jpg", type: "workflow" },
+  { title: "Kaka Grill", tag: "Web Design", badge: "WEB", bg: "#18101a", image: "/kaka-grill-web.jpg", type: "social" },
+  { title: "Spice Mantra", tag: "Web Design", badge: "WEB", bg: "#10101e", image: "/spice-mantra-web.jpg", type: "twitch" },
+  { title: "Zelebrate Moments", tag: "Web Design", badge: "WEB", bg: "#121212", image: "/zelebrate-moments-web.jpg", type: "glass" },
+  { title: "Max Gym", tag: "Web Design", badge: "WEB", bg: "#1a1010", image: "/max-gym-web.jpg", type: "workflow" },
 ];
 
 const socialMediaData: SocialProjectItem[] = [
@@ -336,15 +588,13 @@ const socialMediaData: SocialProjectItem[] = [
   { title: "Look Smart", tag: "Social Media", badge: "SOCIAL", bg: "#14181c", type: "social", images: ["/looksmart-1.jpg", "/looksmart-2.jpg", "/looksmart-3.jpg", "/looksmart-4.jpg", "/looksmart-5.jpg", "/looksmart-6.jpg"] },
 ];
 
+/* ── 6th logo removed (was showing a broken image) ── */
 const imageTrailItems = [
-  "https://picsum.photos/id/287/300/300",
-  "https://picsum.photos/id/1001/300/300",
-  "https://picsum.photos/id/1025/300/300",
-  "https://picsum.photos/id/1026/300/300",
-  "https://picsum.photos/id/1027/300/300",
-  "https://picsum.photos/id/1028/300/300",
-  "https://picsum.photos/id/1029/300/300",
-  "https://picsum.photos/id/1030/300/300",
+  "/triton-arabia-logo.jpg",
+  "/nex-vision-arabia-logo.jpg",
+  "/kaka-grill-logo.jpg",
+  "/spice-mantra-logo.jpg",
+  "/zelebrate-moments-logo.jpg",
 ];
 
 interface UpcomingProject {
@@ -362,8 +612,36 @@ const upcomingProjectsData: UpcomingProject[] = [
   { title: "Drift Coffee Co.", tag: "In Development", image: "/drift-coffee.jpg" },
 ];
 
+/* ═══════════════════════════ NEW: Company Brochure data ═══════════════════════════
+   Drop your 4 PDF files into the `public/brochures/` folder of your project using
+   these exact filenames (or edit the `file` paths below to match your own files).
+   Clicking a card opens that PDF in a new browser tab. */
+const brochuresData: BrochureItem[] = [
+  { title: "Triton Arabia Materia", file: "/brochures/triton-arabia-materia.pdf" },
+  { title: "Triton Arabia Stationery", file: "/brochures/triton-arabia-stationery.pdf" },
+  { title: "Nexvision", file: "/brochures/nexvision.pdf" },
+  { title: "Marafi", file: "/brochures/marafi.pdf" },
+];
+
+// Small hook: tells us whether we're on a touch / narrow-screen device.
+// Used to swap the cursor-driven ImageTrail for a tap-friendly static grid on mobile.
+function useIsMobile(breakpoint = 768): boolean {
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= breakpoint);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [breakpoint]);
+
+  return isMobile;
+}
+
 export default function ZexoAgency(): ReactNode {
   const [scrolled, setScrolled] = useState<boolean>(false);
+  const [activeProject, setActiveProject] = useState<number | null>(null); // tracks which website-project card is expanded to show the full image
+  const isMobile = useIsMobile(768);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -384,7 +662,13 @@ export default function ZexoAgency(): ReactNode {
             <RotatingText texts={["Agency", "Agency"]} />
           </span>
         </a>
-        <button className="btn-primary" onClick={() => window.open("https://www.zexoagency.com", "_blank")}>Website</button>
+        <div className="nav-actions">
+          <a href="tel:+966598369616" className="btn-call" aria-label="Call Zexo Agency">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span className="btn-call-text">Call</span>
+          </a>
+          <button className="btn-primary" onClick={() => window.open("https://www.zexoagency.com", "_blank")}>Website</button>
+        </div>
       </nav>
 
       {/* ───── Hero ───── */}
@@ -408,24 +692,60 @@ export default function ZexoAgency(): ReactNode {
             </a>
           </div>
         </div>
-        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, left: '40%', zIndex: 1 }}>
-          <Antigravity color="#0c8665" />
-        </div>
+        {!isMobile && (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+            <LightRays
+              raysOrigin="top-center"
+              raysColor="#0c8665"
+              raysSpeed={1.2}
+              lightSpread={0.7}
+              rayLength={1.4}
+              followMouse={true}
+              mouseInfluence={0.12}
+              noiseAmount={0.08}
+              distortion={0.04}
+              saturation={1}
+              fadeDistance={1.1}
+              className="hero-light-rays"
+            />
+          </div>
+        )}
       </section>
 
       {/* ───── Website Projects ───── */}
       <section className="portfolio">
         <h2 className="portfolio-title">Our Website Projects</h2>
         <div className="portfolio-grid">
-          {projectsData.map((project, index) => (
-            <div className="project-card" key={`web-${index}`} style={{ background: project.bg }}>
-              <div className="project-card-info">
-                <div className="project-card-title">{project.title}</div>
-                <div className="project-card-tag">{project.tag}</div>
+          {projectsData.map((project, index) => {
+            const isActive = activeProject === index;
+            return (
+              <div
+                className={`project-card${isActive ? " active" : ""}`}
+                key={`web-${index}`}
+                style={{ background: project.bg }}
+                onClick={() => setActiveProject(isActive ? null : index)}
+              >
+                {isActive && (
+                  <button
+                    className="project-card-close"
+                    aria-label="Close full image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveProject(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+                <img src={project.image} alt={project.title} className="project-card-img" loading="lazy" />
+                <div className="project-card-info">
+                  <div className="project-card-title">{project.title}</div>
+                  <div className="project-card-tag">{project.tag}</div>
+                </div>
+                <div className="project-card-badge">{project.badge}</div>
               </div>
-              <div className="project-card-badge">{project.badge}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -461,7 +781,6 @@ export default function ZexoAgency(): ReactNode {
               <div className="social-card-body">
                 <div className="social-card-title">{project.title}</div>
                 <div className="social-card-desc">Social Media Projects</div>
-                <button className="social-card-arrow">&#8599;</button>
               </div>
             </div>
           ))}
@@ -481,15 +800,29 @@ export default function ZexoAgency(): ReactNode {
           </div>
         </div>
         <div style={{ position: 'relative' }}>
-          <div className="image-trail-wrapper">
-            <ImageTrail
-              items={imageTrailItems}
-              variant={2}
-            />
-          </div>
-          
+          {isMobile ? (
+            /* Touch-friendly static grid — cursor-trail effects don't work on touch screens,
+               so mobile users get a clean, always-visible grid of every logo instead. */
+            <div className="logo-grid-wrapper">
+              <div className="logo-grid">
+                {imageTrailItems.map((src, i) => (
+                  <div className="logo-grid-item" key={i}>
+                    <img src={src} alt={`Logo design ${i + 1}`} loading="lazy" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="image-trail-wrapper">
+              <ImageTrail
+                items={imageTrailItems}
+                variant={2}
+              />
+            </div>
+          )}
+
           {/* ───── Falling Text Integrated Here ───── */}
-          <div style={{ width: '100%', height: '300px', marginTop: '20px' }}>
+          <div style={{ width: '100%', height: isMobile ? '200px' : '300px', marginTop: '20px' }}>
             <FallingText
               text="Zexo Agency Your Digital Growth Partner"
               highlightWords={["Zexo", "Growth", "Partner"]}
@@ -498,17 +831,19 @@ export default function ZexoAgency(): ReactNode {
               backgroundColor="transparent"
               wireframes={false}
               gravity={0.56}
-              fontSize="clamp(1.5rem, 4vw, 2.5rem)"
+              fontSize="clamp(1.3rem, 5.5vw, 2.5rem)"
               mouseConstraintStiffness={0.9}
             />
           </div>
 
-          <div className="image-trail-hint">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59" />
-            </svg>
-            Move your cursor to explore
-          </div>
+          {!isMobile && (
+            <div className="image-trail-hint">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59" />
+              </svg>
+              Move your cursor to explore
+            </div>
+          )}
         </div>
       </section>
 
@@ -533,6 +868,45 @@ export default function ZexoAgency(): ReactNode {
               <div className="upcoming-card-overlay">
                 <div className="upcoming-card-title">{project.title}</div>
                 <div className="upcoming-card-tag">{project.tag}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ───── Company Brochure (NEW — placed right after Upcoming Projects) ───── */}
+      <section className="brochure-section">
+        <div className="section-header">
+          <div className="section-title-row">
+            <h2 className="portfolio-title" style={{ marginBottom: 0 }}>Company Brochure</h2>
+            <div className="dot-grid">
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div className="dot" key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="brochure-subtitle">Tap a file to open the PDF in a new tab.</p>
+        <div className="brochure-grid">
+          {brochuresData.map((item, index) => (
+            <div className="brochure-card-wrap" key={`brochure-${index}`}>
+              <a
+                className="brochure-card"
+                href={item.file}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Open ${item.title} PDF`}
+              >
+                <div className="brochure-folder">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  <span className="brochure-pdf-tag">PDF</span>
+                </div>
+              </a>
+              <div className="brochure-caption">
+                <div className="brochure-caption-title">{item.title}</div>
               </div>
             </div>
           ))}

@@ -71,10 +71,12 @@ export default function InfiniteMenu(props: InfiniteMenuProps) {
             />
             <div className="inf-item-overlay" />
           </div>
-          <div className="inf-item-info">
-            {title ? <span className="inf-item-title">{title}</span> : null}
-            {description ? <span className="inf-item-desc">{description}</span> : null}
-          </div>
+          {(title || description) && (
+            <div className="inf-item-info">
+              {title ? <span className="inf-item-title">{title}</span> : null}
+              {description ? <span className="inf-item-desc">{description}</span> : null}
+            </div>
+          )}
         </a>
       );
     });
@@ -91,7 +93,7 @@ export default function InfiniteMenu(props: InfiniteMenuProps) {
         .inf-scroller {
           display: flex;
           gap: 20px;
-          align-items: stretch;
+          align-items: center;
           height: 100%;
           will-change: transform;
           width: max-content;
@@ -99,7 +101,7 @@ export default function InfiniteMenu(props: InfiniteMenuProps) {
         .inf-item {
           flex-shrink: 0;
           width: 220px;
-          height: 300px;
+          height: 220px;
           border-radius: 14px;
           overflow: hidden;
           position: relative;
@@ -118,14 +120,20 @@ export default function InfiniteMenu(props: InfiniteMenuProps) {
         }
         .inf-item-img-wrap {
           width: 100%;
-          height: 210px;
+          height: 100%;
           overflow: hidden;
           position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 14px;
         }
         .inf-item-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          max-width: 100%;
+          max-height: 100%;
+          width: auto;
+          height: auto;
+          object-fit: contain;
           display: block;
           transition: transform 0.5s ease;
         }
@@ -170,3 +178,5 @@ export default function InfiniteMenu(props: InfiniteMenuProps) {
     </>
   );
 }
+
+
